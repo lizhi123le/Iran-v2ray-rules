@@ -140,6 +140,51 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      ############################################################
+      # 🔍 Debug Section — inserted before geoip convert
+      ############################################################
+
+      - name: Debug config.json
+        run: |
+          echo "===== config.json ====="
+          cat config.json
+
+      - name: Debug messengers-ip.txt
+        run: |
+          echo "===== messengers-ip.txt (first 50 lines) ====="
+          nl -ba messengers-ip.txt | head -n 50
+          echo "===== messengers-ip.txt (last 50 lines) ====="
+          nl -ba messengers-ip.txt | tail -n 50
+
+      - name: Debug domains files
+        run: |
+          echo "===== Checking domains directory ====="
+          for f in domains/*; do
+            echo "--- $f ---"
+            head -n 20 "$f"
+          done
+
+      - name: Debug ip2location directory
+        run: |
+          echo "===== ip2location directory ====="
+          ls -R ip2location
+
+      - name: Scan for invalid IP patterns
+        run: |
+          echo "===== Scan for invalid IP patterns ====="
+          grep -RnvE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(/([0-9]|[12][0-9]|3[0-2]))?$' . || true
+
+      - name: Debug geoip binary
+        run: |
+          echo "===== geoip version ====="
+          ./geoip --version || true
+          echo "===== geoip help ====="
+          ./geoip --help || true
+
+      ############################################################
+      # End Debug Section
+      ############################################################
+
       - name: Generate geoip files
         run: |
           tar -xvzf geoip.tar.gz
