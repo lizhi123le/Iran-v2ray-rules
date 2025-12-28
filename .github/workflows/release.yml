@@ -275,21 +275,13 @@ jobs:
           find . -name "*.bak" -type f -delete
           echo "===== .bak cleanup complete ====="
 
-      - name: Rebuild config.json without empty data sources
+      - name: Remove IRANSERVER entry from config.json
         run: |
-          echo "===== Rebuilding config.json ====="
+          echo "===== Removing IRANSERVER entry from config.json ====="
 
-          # 读取所有空文件
-          EMPTY_FILES=$(find ir-cdn ip2location ipranges -type f -empty | sed 's|^\./||')
-
-          echo "Empty files detected:"
-          echo "$EMPTY_FILES"
-
-          # 使用 jq 过滤掉引用这些文件的 entry
-          jq --argjson emptyFiles "$(printf '%s\n' $EMPTY_FILES | jq -R . | jq -s .)" '
+          jq '
             .input |= map(
-              if (.args.uri? // "") as $u
-                 | ($emptyFiles | index($u))
+              if (.args.name? | ascii_upcase == "IRANSERVER")
               then empty
               else .
               end
@@ -298,7 +290,7 @@ jobs:
 
           mv config.cleaned.json config.json
 
-          echo "===== config.json rebuilt ====="
+          echo "===== IRANSERVER entry removed ====="
 
       - name: Remove empty data sources from config.json
         run: |
