@@ -207,13 +207,21 @@ jobs:
             if [ -f "$t" ]; then
               FILES="$t"
             elif [ -d "$t" ]; then
-              FILES=$(find "$t" -type f)
+              # 排除 .git 目录，只处理文本文件
+              FILES=$(find "$t" -type f ! -path "*/.git/*" -exec file {} \; | grep -i 'text' | cut -d: -f1)
             else
               continue
             fi
 
             for f in $FILES; do
               echo "--- Checking $f ---"
+
+              # 如果文件不可写，跳过（避免 Permission denied）
+              if [ ! -w "$f" ]; then
+                echo "SKIP: $f (not writable)"
+                continue
+              fi
+
               cp "$f" "$f.bak"
 
               # 1) 如果文件包含 HTML（例如 404 页面），直接跳过并清空
