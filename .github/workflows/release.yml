@@ -191,29 +191,46 @@ jobs:
           # 合法 IPv4 / IPv6 / CIDR
           VALID_REGEX='^([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?$|^([0-9a-fA-F:]+)(/[0-9]{1,3})?$'
 
-          # 查找所有包含 IPv4 或 IPv6 的文件，排除 config.json
-          FILES=$(grep -RIl . -e '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\|:' | grep -v 'config.json')
+          # 只清洗真正包含 IP 的目录和文件
+          TARGETS="
+            messengers-ip.txt
+            ir-cdn
+            ip2location
+            phishing-ip.txt
+            malware-ip.txt
+            ipranges
+            ads-raw.txt
+          "
 
-          for f in $FILES; do
-            echo "--- Cleaning $f ---"
-            cp "$f" "$f.bak"
+          for t in $TARGETS; do
+            if [ -f "$t" ]; then
+              FILES="$t"
+            elif [ -d "$t" ]; then
+              FILES=$(find "$t" -type f)
+            else
+              continue
+            fi
 
-            awk -v regex="$VALID_REGEX" '
-              {
-                gsub(/"/, "", $0);        # 去掉引号
-                gsub(/#.*/, "", $0);      # 去掉注释
-                gsub(/;.*/, "", $0);      # 去掉分号后内容
-                gsub(/,.*/, "", $0);      # 去掉逗号后内容
-                gsub(/[ \t\r]+$/, "", $0);# 去掉尾部空白
-                if ($0 ~ regex) print $0;
-              }
-            ' "$f.bak" > "$f.cleaned"
+            for f in $FILES; do
+              echo "--- Cleaning $f ---"
+              cp "$f" "$f.bak"
 
-            mv "$f.cleaned" "$f"
+              awk -v regex="$VALID_REGEX" '
+                {
+                  gsub(/"/, "", $0);
+                  gsub(/#.*/, "", $0);
+                  gsub(/;.*/, "", $0);
+                  gsub(/,.*/, "", $0);
+                  gsub(/[ \t\r]+$/, "", $0);
+                  if ($0 ~ regex) print $0;
+                }
+              ' "$f.bak" > "$f.cleaned"
+
+              mv "$f.cleaned" "$f"
+            done
           done
 
           echo "===== Cleaning complete ====="
-
 
       ############################################################
       # End Debug + Auto-clean Section
