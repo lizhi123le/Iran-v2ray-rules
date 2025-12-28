@@ -213,29 +213,45 @@ jobs:
             fi
 
             for f in $FILES; do
-              echo "--- Cleaning $f ---"
+              echo "--- Checking $f ---"
               cp "$f" "$f.bak"
 
-              # 如果文件包含 HTML（例如 404 页面），直接清空
+              # 1) 如果文件包含 HTML（例如 404 页面），直接跳过并清空
               if grep -qi "<html\|<head\|<title\|<body" "$f.bak"; then
-                echo "HTML detected in $f — clearing file"
+                echo "SKIP: $f (HTML detected, likely 404)"
                 echo "" > "$f"
                 continue
               fi
 
-              # 清洗 IP
+              # 2) 如果文件为空，跳过
+              if [ ! -s "$f.bak" ]; then
+                echo "SKIP: $f (empty file)"
+                echo "" > "$f"
+                continue
+              fi
+
+              # 3) 清洗 IP
               awk -v regex="$VALID_REGEX" '
                 {
-                  gsub(/"/, "", $0);        # 去掉引号
-                  gsub(/#.*/, "", $0);      # 去掉注释
-                  gsub(/;.*/, "", $0);      # 去掉分号后内容
-                  gsub(/,.*/, "", $0);      # 去掉逗号后内容
-                  gsub(/[ \t\r]+$/, "", $0);# 去掉尾部空白
-                  if ($0 ~ regex) print $0; # 只保留合法 IP
+                  gsub(/"/, "", $0);
+                  gsub(/#.*/, "", $0);
+                  gsub(/;.*/, "", $0);
+                  gsub(/,.*/, "", $0);
+                  gsub(/[ \t\r]+$/, "", $0);
+                  if ($0 ~ regex) print $0;
                 }
               ' "$f.bak" > "$f.cleaned"
 
+              # 4) 如果清洗后没有合法 IP，跳过该数据源
+              if [ ! -s "$f.cleaned" ]; then
+                echo "SKIP: $f (no valid IPs after cleaning)"
+                echo "" > "$f"
+                continue
+              fi
+
+              # 5) 正常替换
               mv "$f.cleaned" "$f"
+              echo "OK: $f"
             done
           done
 
