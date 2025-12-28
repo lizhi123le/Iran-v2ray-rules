@@ -275,26 +275,6 @@ jobs:
           find . -name "*.bak" -type f -delete
           echo "===== .bak cleanup complete ====="
 
-      - name: Remove IRANSERVER entry from config.json
-        run: |
-          echo "===== Removing IRANSERVER entry from config.json ====="
-
-          jq '
-            .input |= map(
-              if (type == "object"
-                  and (.args? | type == "object")
-                  and (.args.name? | type == "string")
-                  and (.args.name | ascii_upcase) == "IRANSERVER")
-              then empty
-              else .
-              end
-            )
-          ' config.json > config.cleaned.json
-
-          mv config.cleaned.json config.json
-
-          echo "===== IRANSERVER entry removed ====="
-
       - name: Remove empty data sources from config.json
         run: |
           echo "===== Removing empty data sources from config.json ====="
