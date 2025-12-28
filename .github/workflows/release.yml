@@ -184,6 +184,7 @@ jobs:
       ############################################################
       # 🧹 Auto-clean invalid IPs
       ############################################################
+      
       - name: Auto-clean invalid IPs
         run: |
           echo "===== Auto-cleaning invalid IPs ====="
@@ -215,14 +216,22 @@ jobs:
               echo "--- Cleaning $f ---"
               cp "$f" "$f.bak"
 
+              # 如果文件包含 HTML（例如 404 页面），直接清空
+              if grep -qi "<html\|<head\|<title\|<body" "$f.bak"; then
+                echo "HTML detected in $f — clearing file"
+                echo "" > "$f"
+                continue
+              fi
+
+              # 清洗 IP
               awk -v regex="$VALID_REGEX" '
                 {
-                  gsub(/"/, "", $0);
-                  gsub(/#.*/, "", $0);
-                  gsub(/;.*/, "", $0);
-                  gsub(/,.*/, "", $0);
-                  gsub(/[ \t\r]+$/, "", $0);
-                  if ($0 ~ regex) print $0;
+                  gsub(/"/, "", $0);        # 去掉引号
+                  gsub(/#.*/, "", $0);      # 去掉注释
+                  gsub(/;.*/, "", $0);      # 去掉分号后内容
+                  gsub(/,.*/, "", $0);      # 去掉逗号后内容
+                  gsub(/[ \t\r]+$/, "", $0);# 去掉尾部空白
+                  if ($0 ~ regex) print $0; # 只保留合法 IP
                 }
               ' "$f.bak" > "$f.cleaned"
 
