@@ -281,7 +281,10 @@ jobs:
 
           jq '
             .input |= map(
-              if (.args.name? | type == "string" and (.args.name | ascii_upcase) == "IRANSERVER")
+              if (type == "object"
+                  and (.args? | type == "object")
+                  and (.args.name? | type == "string")
+                  and (.args.name | ascii_upcase) == "IRANSERVER")
               then empty
               else .
               end
