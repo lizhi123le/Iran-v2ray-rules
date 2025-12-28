@@ -281,7 +281,7 @@ jobs:
 
           jq '
             .input |= map(
-              if (.args.name? | ascii_upcase == "IRANSERVER")
+              if (.args.name? | type == "string" and (.args.name | ascii_upcase) == "IRANSERVER")
               then empty
               else .
               end
