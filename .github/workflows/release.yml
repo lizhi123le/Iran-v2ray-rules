@@ -299,12 +299,41 @@ jobs:
           tar -xvzf geoip.tar.gz
           rm -rf ip2location/.git
 
-          # 关键：遇到 no prefix 不退出
-          ./geoip convert -c config.json || echo "geoip convert reported no-prefix entries, skipping..."
+          echo "===== First pass: detect no-prefix entries ====="
+          set +e
+          ./geoip convert -c config.json 2> geoip_error.log
+          RET=$?
+          set -e
 
-          cp output/dat/geoip.dat output/dat/geoip-lite.dat output/dat/security-ip.dat output/dat/geoip-services.dat release
-          cp output/maxmind/Country.mmdb output/maxmind/Country-lite.mmdb output/maxmind/Security-ip.mmdb output/maxmind/Services.mmdb release
+          if grep -q "has no prefix" geoip_error.log; then
+            echo "===== Removing no-prefix entries from config.json ====="
+
+            # 提取所有 no-prefix entry 名称
+            NAMES=$(grep "has no prefix" geoip_error.log | awk '{print $2}')
+
+            for n in $NAMES; do
+              echo "Removing entry: $n"
+              jq --arg NAME "$n" '
+                .input |= map(
+                  if (type=="object"
+                      and (.args? | type=="object")
+                      and (.args.name? | ascii_upcase)==($NAME|ascii_upcase))
+                  then empty
+                  else .
+                  end
+                )
+              ' config.json > config.tmp.json
+              mv config.tmp.json config.json
+            done
+          fi
+
+          echo "===== Second pass: final geoip convert ====="
+          ./geoip convert -c config.json
+
+          cp output/dat/*.dat release
+          cp output/maxmind/*.mmdb release
           cp -fpPR output/text release
+
 
       - name: Verify *.mmdb files
         run: |
