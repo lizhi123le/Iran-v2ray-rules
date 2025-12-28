@@ -45,14 +45,6 @@
       "action": "add",
       "args": {
         "name": "ir",
-        "uri": "./ir-cdn/iranserver.txt"
-      }
-    },
-    {
-      "type": "text",
-      "action": "add",
-      "args": {
-        "name": "ir",
         "uri": "./ir-cdn/parspack.txt"
       }
     },
@@ -474,7 +466,6 @@
           "gcore",
           "github",
           "google",
-          "iranserver",
           "linode",
           "microsoft",
           "netflix",
@@ -561,7 +552,6 @@
           "gcore",
           "github",
           "google",
-          "iranserver",
           "linode",
           "microsoft",
           "netflix",
