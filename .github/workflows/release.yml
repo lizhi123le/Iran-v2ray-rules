@@ -188,18 +188,17 @@ jobs:
         run: |
           echo "===== Auto-cleaning invalid IPs ====="
 
-          # 合法 IPv4 或 IPv4/CIDR
-          VALID_IP_REGEX='^([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?$'
+          # 合法 IPv4 / IPv6 / CIDR
+          VALID_REGEX='^([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?$|^([0-9a-fA-F:]+)(/[0-9]{1,3})?$'
 
-          # 查找所有包含 IPv4 模式的文件，但排除 config.json
-          FILES=$(grep -RIl . -e '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | grep -v 'config.json')
+          # 查找所有包含 IPv4 或 IPv6 的文件，排除 config.json
+          FILES=$(grep -RIl . -e '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\|:' | grep -v 'config.json')
 
           for f in $FILES; do
             echo "--- Cleaning $f ---"
             cp "$f" "$f.bak"
 
-            # 逐行清洗
-            awk -v regex="$VALID_IP_REGEX" '
+            awk -v regex="$VALID_REGEX" '
               {
                 gsub(/"/, "", $0);        # 去掉引号
                 gsub(/#.*/, "", $0);      # 去掉注释
@@ -214,6 +213,7 @@ jobs:
           done
 
           echo "===== Cleaning complete ====="
+
 
       ############################################################
       # End Debug + Auto-clean Section
