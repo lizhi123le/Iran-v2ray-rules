@@ -275,6 +275,25 @@ jobs:
           find . -name "*.bak" -type f -delete
           echo "===== .bak cleanup complete ====="
 
+      - name: Remove empty data sources from config.json
+        run: |
+          echo "===== Removing empty data sources from config.json ====="
+
+          # 找出所有空文件
+          EMPTY_FILES=$(find ir-cdn ip2location ipranges -type f -empty)
+
+          for f in $EMPTY_FILES; do
+            BASENAME=$(basename "$f")
+            NAME=$(echo "$BASENAME" | sed 's/\..*//')
+
+            echo "Removing entry for $NAME (empty file: $f)"
+
+            # 从 config.json 中删除对应的 entry
+            sed -i "/\"uri\": \".*${BASENAME}\"/I,+3 d" config.json
+          done
+
+          echo "===== Done removing empty entries ====="
+
       - name: Generate geoip files
         run: |
           tar -xvzf geoip.tar.gz
