@@ -141,7 +141,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       ############################################################
-      # 🔍 Debug Section — inserted before geoip convert
+      # 🔍 Debug Section
       ############################################################
 
       - name: Debug config.json
@@ -182,7 +182,28 @@ jobs:
           ./geoip --help || true
 
       ############################################################
-      # End Debug Section
+      # 🧹 Auto-clean invalid IPs
+      ############################################################
+
+      - name: Auto-clean invalid IPs
+        run: |
+          echo "===== Auto-cleaning invalid IPs ====="
+
+          VALID_IP_REGEX='^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(/([0-9]|[12][0-9]|3[0-2]))?$'
+
+          FILES=$(grep -RIl . -e '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+
+          for f in $FILES; do
+            echo "--- Cleaning $f ---"
+            cp "$f" "$f.bak"
+            grep -E "$VALID_IP_REGEX" "$f.bak" > "$f.cleaned" || true
+            mv "$f.cleaned" "$f"
+          done
+
+          echo "===== Cleaning complete ====="
+
+      ############################################################
+      # End Debug + Auto-clean Section
       ############################################################
 
       - name: Generate geoip files
