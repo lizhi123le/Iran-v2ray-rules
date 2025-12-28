@@ -191,7 +191,8 @@ jobs:
 
           VALID_IP_REGEX='^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(/([0-9]|[12][0-9]|3[0-2]))?$'
 
-          FILES=$(grep -RIl . -e '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+          # 排除 config.json，避免破坏 JSON
+          FILES=$(grep -RIl . -e '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | grep -v 'config.json')
 
           for f in $FILES; do
             echo "--- Cleaning $f ---"
@@ -201,6 +202,7 @@ jobs:
           done
 
           echo "===== Cleaning complete ====="
+
 
       ############################################################
       # End Debug + Auto-clean Section
