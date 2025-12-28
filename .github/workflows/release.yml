@@ -269,6 +269,12 @@ jobs:
       # End Debug + Auto-clean Section
       ############################################################
 
+      - name: Remove backup files
+        run: |
+          echo "===== Removing .bak files ====="
+          find . -name "*.bak" -type f -delete
+          echo "===== .bak cleanup complete ====="
+
       - name: Find remaining invalid IPs (after cleaning)
         run: |
           echo "===== Scanning for remaining invalid IPs ====="
