@@ -295,7 +295,8 @@ jobs:
             if [ -f "$t" ]; then
               FILES="$t"
             elif [ -d "$t" ]; then
-              FILES=$(find "$t" -type f)
+              # 只扫描文本文件，排除 .git
+              FILES=$(find "$t" -type f ! -path "*/.git/*" -exec file {} \; | grep -i 'text' | cut -d: -f1)
             else
               continue
             fi
