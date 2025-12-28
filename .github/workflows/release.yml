@@ -302,27 +302,29 @@ jobs:
           echo "===== First pass: detect no-prefix entries ====="
           set +e
           ./geoip convert -c config.json 2> geoip_error.log
-          RET=$?
           set -e
 
           if grep -q "has no prefix" geoip_error.log; then
             echo "===== Removing no-prefix entries from config.json ====="
 
-            # 提取所有 no-prefix entry 名称
-            NAMES=$(grep "has no prefix" geoip_error.log | awk '{print $2}')
+            # 正确提取 entry 名称（第 4 个字段）
+            NAMES=$(grep "has no prefix" geoip_error.log | awk '{print $4}')
 
             for n in $NAMES; do
               echo "Removing entry: $n"
+
               jq --arg NAME "$n" '
                 .input |= map(
                   if (type=="object"
                       and (.args? | type=="object")
-                      and (.args.name? | ascii_upcase)==($NAME|ascii_upcase))
+                      and (.args.name? | type=="string")
+                      and ((.args.name | ascii_upcase) == ($NAME | ascii_upcase)))
                   then empty
                   else .
                   end
                 )
               ' config.json > config.tmp.json
+
               mv config.tmp.json config.json
             done
           fi
@@ -333,7 +335,6 @@ jobs:
           cp output/dat/*.dat release
           cp output/maxmind/*.mmdb release
           cp -fpPR output/text release
-
 
       - name: Verify *.mmdb files
         run: |
