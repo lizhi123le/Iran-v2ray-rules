@@ -240,27 +240,41 @@ jobs:
         run: |
           echo "===== Scanning for remaining invalid IPs ====="
 
-          # 合法 IPv4 / IPv6 / CIDR
           VALID_REGEX='^([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?$|^([0-9a-fA-F:]+)(/[0-9]{1,3})?$'
 
-          # 扫描所有文件，找出不匹配合法 IP 的行
-          grep -RIn . -e '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\|:' \
-            | awk -v regex="$VALID_REGEX" '
-              {
-                line=$0
-                # 提取 IP 部分（去掉注释、引号、逗号等）
-                gsub(/#.*/, "", line)
-                gsub(/;.*/, "", line)
-                gsub(/,.*/, "", line)
-                gsub(/"/, "", line)
-                gsub(/[ \t\r]+$/, "", line)
+          TARGETS="
+            messengers-ip.txt
+            ir-cdn
+            ip2location
+            phishing-ip.txt
+            malware-ip.txt
+            ipranges
+            ads-raw.txt
+          "
 
-                # 如果包含 IP 但不合法，则打印
-                if (line ~ /[0-9]/ && line !~ regex) {
-                  print "INVALID:", $0
-                }
-              }
-            '
+          for t in $TARGETS; do
+            if [ -f "$t" ]; then
+              FILES="$t"
+            elif [ -d "$t" ]; then
+              FILES=$(find "$t" -type f)
+            else
+              continue
+            fi
+
+            for f in $FILES; do
+              grep -n . "$f" | while read -r line; do
+                content=$(echo "$line" | sed 's/^[0-9]*://')
+                clean=$content
+                clean=$(echo "$clean" | sed 's/#.*//; s/;.*//; s/,.*//; s/"//g; s/[ \t\r]*$//')
+
+                if echo "$clean" | grep -Eq '[0-9]'; then
+                  if ! echo "$clean" | grep -Eq "$VALID_REGEX"; then
+                    echo "INVALID: $f:$line"
+                  fi
+                fi
+              done
+            done
+          done
 
       - name: Generate geoip files
         run: |
